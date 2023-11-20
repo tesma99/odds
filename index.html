@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>What are the odds</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="model.js"></script>
+    <style>
+        .success-yes {
+            background-color: #4CAF50; /* Grün für "yes" */
+            color: #fff;
+        }
+
+        .success-no {
+            background-color: #FF5733; /* Rot für "no" */
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <h1>What are the odds</h1>
+
+    <label for="anzahlWuerfel">Anzahl Würfel:</label>
+    <input type="number" id="anzahlWuerfel" name="anzahlWuerfel" min="1" value="1"><br>
+
+    <label for "seitenProWuerfel">Anzahl Seiten pro Würfel:</label>
+    <input type="number" id="seitenProWuerfel" name="seitenProWuerfel" min="2" value="6"><br>
+
+    <div style="display: flex; align-items: center;">
+        <select id="auswahl" name="auswahl" style="flex: 1;">
+            <option value="sumAtLeast">Summe mindestens</option>
+            <option value="minValueAtLeastOnce">Mindestens einmal</option>
+            <option value="allResultsWithMinValue">Alle Würfel mindestens</option>
+        </select>
+        <input type="number" id="successParam" name="successParam" min="1" value="1">
+    </div>
+
+    <button onclick="calc()">Berechnen</button>
+
+    <table>
+        <tr>
+            <td>Erfolgswahrscheinlichkeit</td>
+            <td id="successChance">-</td>
+        </tr>
+        <tr>
+            <td>Anzahl möglicher Kombinationen</td>
+            <td id="numberOfCombis">-</td>
+        </tr>
+        <tr>
+            <td>Erfolge</td>
+            <td id="successCount">-</td>
+        </tr>
+        <tr>
+            <td>Misserfolge</td>
+            <td id="failCount">-</td>
+        </tr>
+    </table>
+
+    <table id="resultTable" style="display: none;">
+    </table>
+
+    <script>
+        function calc() {
+            const numDice = parseInt(document.getElementById('anzahlWuerfel').value);
+            const numSides = parseInt(document.getElementById('seitenProWuerfel').value);
+            const successParam = parseInt(document.getElementById('successParam').value);
+            const successCalcMethod = document.getElementById('auswahl').value;
+
+            let successCalc;
+            if (successCalcMethod === 'sumAtLeast') {
+                successCalc = new SumAtLeast(successParam);
+            } else if (successCalcMethod === 'minValueAtLeastOnce') {
+                successCalc = new MinValueAtLeastOnce(successParam);
+            } else if (successCalcMethod === 'allResultsWithMinValue') {
+                successCalc = new AllResultsWithMinValue(successParam);
+            }
+
+            const {
+                numberOfCombis,
+                successCount,
+                failCount,
+                results,
+                successChance,
+                successes
+            } = countDiceCombinations(numDice, numSides, successCalc);
+
+            document.getElementById('numberOfCombis').textContent = numberOfCombis;
+            document.getElementById('successCount').textContent = successCount;
+            document.getElementById('failCount').textContent = failCount;
+            document.getElementById('successChance').textContent = (successChance * 100) + " %";
+
+            // Erstelle die Ergebnistabelle
+            const resultTable = document.getElementById('resultTable');
+            resultTable.innerHTML = "<tr><th>Ergebnis</th><th>Würfelergebnisse</th><th>Erfolg</th></tr>"; // Lösche vorherige Inhalte
+
+            // Füge die Ergebnisse zur Tabelle hinzu
+            for (let resultIdx = 0; resultIdx < numberOfCombis; resultIdx++) {
+                const row = resultTable.insertRow(-1);
+                const cell1 = row.insertCell(0);
+                const cell2 = row.insertCell(1);
+                const cell3 = row.insertCell(2);
+                cell1.innerHTML = "Ergebnis " + (resultIdx + 1);
+                cell2.innerHTML = "";
+                for (let dieIdx = 0; dieIdx < numDice; dieIdx++) {
+                    cell2.innerHTML += "[" + results[dieIdx][resultIdx] + "] ";
+                }
+                cell3.innerHTML = successes[resultIdx] ? "Ja" : "Nein";
+                cell3.className = successes[resultIdx] ? "success-yes" : "success-no";
+            }
+
+            // Zeige die Ergebnistabelle
+            resultTable.style.display = 'table';
+        }
+    </script>
+</body>
+</html>
